@@ -1,0 +1,44 @@
+name: Build Emoji Pack
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install deps
+        run: pip install -r requirements.txt
+
+      - name: Download Twemoji assets
+        run: |
+          curl -L -o twemoji.zip https://github.com/jdecked/twemoji/archive/refs/heads/main.zip
+          unzip -q twemoji.zip
+          mv twemoji-main twemoji-src
+
+      - name: Build packs
+        run: python build_emoji_pack.py twemoji-src/assets/72x72
+
+      - name: Zip Java pack
+        run: cd java_pack && zip -r ../AztheraEmoji-Java.zip . && cd ..
+
+      - name: Zip Bedrock pack
+        run: cd bedrock_pack && zip -r ../AztheraEmoji-Bedrock.mcpack . && cd ..
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: emoji-packs
+          path: |
+            AztheraEmoji-Java.zip
+            AztheraEmoji-Bedrock.mcpack
